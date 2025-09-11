@@ -45,4 +45,4 @@ typedef struct {
     bool    in_use;
 } peer_state_t;
 
-const int peer_arr_length = 20;
+#define peer_arr_length 20

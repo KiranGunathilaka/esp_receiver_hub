@@ -4,5 +4,6 @@ cmake_minimum_required(VERSION 3.16)
 
 # Include ESP-IDF build system
 
-project(esp_receiver_hub)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+project(esp_receiver_hub)
