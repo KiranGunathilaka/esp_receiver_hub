@@ -17,5 +17,7 @@
         "cmath": "c",
         "complex": "c"
     },
-    "C_Cpp.default.compilerPath": "C:/Users/META/.espressif/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/xtensa-esp32s3-elf-gcc.exe"
+    "C_Cpp.default.compilerPath": "C:/Users/META/.espressif/tools/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/xtensa-esp32s3-elf-gcc.exe",
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
 }

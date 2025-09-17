@@ -172,10 +172,9 @@ static void espnow_recv_cb(const esp_now_recv_info_t *info,
     xQueueSend(q_to_pi, &item, 0);
 }
 
-static void espnow_sent_cb(const uint8_t *mac, esp_now_send_status_t st)
+static void espnow_send_cb(const esp_now_send_info_t *tx_info, esp_now_send_status_t status)
 {
-    (void)mac;
-    (void)st; // optional logging
+    ESP_LOGI("S", "Send status: %s", status == ESP_NOW_SEND_SUCCESS ? "OK" : "FAIL");
 }
 
 // ===== Tasks =====
@@ -341,7 +340,7 @@ static void init_wifi_espnow(void)
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_now_init());
     esp_now_register_recv_cb(espnow_recv_cb);
-    esp_now_register_send_cb(espnow_sent_cb);
+    esp_now_register_send_cb(espnow_send_cb);
 }
 
 void app_main(void)
