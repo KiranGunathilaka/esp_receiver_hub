@@ -14,6 +14,7 @@
 #define MAX_RETRIES         3
 
 typedef struct {
+    uint8_t dev_id; 
     char uid[64]; // ESP-NOW payload from readers (XOR obfuscated on-wire)
 } rfid_msg_t;
 
@@ -29,6 +30,7 @@ typedef struct {
 typedef struct {
     uint32_t req_id;
     uint8_t  mac[6];
+    uint8_t  dev_id; 
     char     uid[64];     // plain, de-obfuscated
     uint8_t  attempts;
 } to_pi_t;

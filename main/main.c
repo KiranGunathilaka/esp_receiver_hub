@@ -124,15 +124,14 @@ static bool uart_read_line(char *buf, size_t maxlen)
 // ===== ESP-NOW callbacks =====
 static esp_err_t ensure_peer_added(const uint8_t *mac)
 {
+    if (esp_now_is_peer_exist(mac)) return ESP_OK;  // no warning
     esp_now_peer_info_t p = {0};
     memcpy(p.peer_addr, mac, 6);
     p.channel = WIFI_CHANNEL;
     p.encrypt = false;
-    esp_err_t e = esp_now_add_peer(&p);
-    if (e == ESP_ERR_ESPNOW_EXIST)
-        return ESP_OK;
-    return e;
+    return esp_now_add_peer(&p);
 }
+
 
 static void espnow_recv_cb(const esp_now_recv_info_t *info,
                            const uint8_t *data, int len)
@@ -143,30 +142,24 @@ static void espnow_recv_cb(const esp_now_recv_info_t *info,
     rfid_msg_t m;
     memcpy(&m, data, sizeof(m));
 
-    // deobfuscate into a temp buffer
+    // deobfuscate into a temp buffer (unchanged)
     char plain[64];
     memset(plain, 0, sizeof(plain));
     strncpy(plain, m.uid, sizeof(plain) - 1);
     deob(plain);
 
-    // remember first char per MAC
+    // remember first char per MAC (unchanged)
     xSemaphoreTake(peer_mutex, portMAX_DELAY);
     int idx = peer_get_or_add(info->src_addr);
     if (idx >= 0)
         peers[idx].first_char = (uint8_t)plain[0];
     xSemaphoreGive(peer_mutex);
 
-    // ESP_LOGI(TAG,
-    //      "RX from %02X:%02X:%02X:%02X:%02X:%02X len=%d req_seq(next)=%" PRIu32,
-    //      info->src_addr[0], info->src_addr[1], info->src_addr[2],
-    //      info->src_addr[3], info->src_addr[4], info->src_addr[5],
-    //      len, g_req_seq + 1);
-    // ESP_LOGI(TAG, "UID(deob): '%s'", plain);
-
-    // enqueue to Pi
+    // enqueue to Pi (ADD dev_id)
     to_pi_t item = {0};
-    item.req_id = __atomic_add_fetch(&g_req_seq, 1, __ATOMIC_RELAXED);
+    item.req_id  = __atomic_add_fetch(&g_req_seq, 1, __ATOMIC_RELAXED);
     memcpy(item.mac, info->src_addr, 6);
+    item.dev_id  = m.dev_id;                       
     strncpy(item.uid, plain, sizeof(item.uid) - 1);
     item.attempts = 0;
     xQueueSend(q_to_pi, &item, 0);
@@ -187,12 +180,13 @@ static void uart_tx_task(void *arg)
         // block until at least one message exists
         xQueuePeek(q_to_pi, &front, portMAX_DELAY);
 
-        // send JSON: {"t":"req","id":123,"mac":"AA:..","uid":"..."}
+        // {"t":"req","id":123,"dev_id":7,"mac":"AA:..","uid":"..."}
         cJSON *root = cJSON_CreateObject();
         char macs[18];
         mac_to_str(front.mac, macs);
         cJSON_AddStringToObject(root, "t", "req");
         cJSON_AddNumberToObject(root, "id", (double)front.req_id);
+        cJSON_AddNumberToObject(root, "dev_id", (double)front.dev_id);
         cJSON_AddStringToObject(root, "mac", macs);
         cJSON_AddStringToObject(root, "uid", front.uid);
         uart_send_json(root);
